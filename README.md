@@ -1,5 +1,7 @@
 # April
-[![Open Source Starter Files](https://github.com/nrminor/April/actions/workflows/open-source-starter.yml/badge.svg)](https://github.com/nrminor/April/actions/workflows/open-source-starter.yml) [![Rust CI](https://github.com/nrminor/April/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/nrminor/April/actions/workflows/rust-ci.yml) 
+[![Open Source Starter Files](https://github.com/nrminor/April/actions/workflows/open-source-starter.yml/badge.svg)](https://github.com/nrminor/April/actions/workflows/open-source-starter.yml) [![Rust CI](https://github.com/nrminor/April/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/nrminor/April/actions/workflows/rust-ci.yml)
+
+April helps noteworthy genomes spring up and stand out from large sequence datasets.
 
 ### Backstory
 First off, a disclaimer: April is not built yet and is in its very early stages. That said, I can still provide a little backstory.
