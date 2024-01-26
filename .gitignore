@@ -1,4 +1,10 @@
 /target
+/sandbox
+/scratch
+/test
+/input
 
+*test*
+*.fa*
 .DS_Store
 ._*
