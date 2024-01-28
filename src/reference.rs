@@ -1,19 +1,14 @@
-pub mod cli;
-pub mod reference;
-
 use anyhow::Result;
 use needletail::{parse_fastx_file, Sequence};
-use std::{path::PathBuf, rc::Rc};
+use std::path::PathBuf;
+use std::rc::Rc;
 
-fn main() -> Result<()> {
-    //  variables that will be outsourced to the command line interface
-    let filename = PathBuf::from("test_dataset/PP141354.1.fasta");
-    let test_kmer = Rc::from(b"AAGAAATGCTGGACAACAGGGCAACCTTACAA");
-    let kmer_len: u8 = 32;
-    let _amplicon_interval = 300;
+pub fn process_fasta(input_path: PathBuf, kmer_len: u8, ref_kmers: Rc<[&[u8; 32]]>) -> Result<()> {
+    // TODO: Replace with actual slice of all minimizer kmers from reference
+    let test_kmer = *ref_kmers.first().unwrap();
 
     // open fasta reader
-    let mut reader = parse_fastx_file(filename)?;
+    let mut reader = parse_fastx_file(input_path)?;
     while let Some(record) = reader.next() {
         // unwrap the record
         let seqrec = record?;
@@ -54,23 +49,6 @@ fn main() -> Result<()> {
             hit_locs.len(),
             counter
         );
-
-        // create a companion vector of each previous kmer's locations
-        let mut prev_locs = vec![0_usize];
-        prev_locs.append(&mut hit_locs.clone());
-        prev_locs = prev_locs[0..hit_locs.len()].to_vec();
-
-        // compute intervals between kmer hits
-        let mut intervals = Vec::new();
-        for (current, previous) in hit_locs.iter().zip(prev_locs.iter()) {
-            if previous == &0_usize {
-                continue;
-            }
-            let interval = current - previous;
-            intervals.push(interval)
-        }
-
-        println!("Interval-ing successful:\n{:?}", intervals)
     }
 
     Ok(())
