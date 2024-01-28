@@ -3,9 +3,10 @@ use needletail::{parse_fastx_file, Sequence};
 use std::path::PathBuf;
 use std::rc::Rc;
 
-pub fn process_fasta(input_path: PathBuf, kmer_len: u8, ref_kmers: Rc<[&[u8; 32]]>) -> Result<()> {
+pub fn process_fasta(input_path: &PathBuf, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Result<()> {
     // TODO: Replace with actual slice of all minimizer kmers from reference
     let test_kmer = *ref_kmers.first().unwrap();
+    let kmer_len = test_kmer.len() as u8;
 
     // open fasta reader
     let mut reader = parse_fastx_file(input_path)?;
