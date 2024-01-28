@@ -13,7 +13,7 @@ fn main() -> Result<()> {
 
     // TODO: these are simply demo calls. They will be replace with clap
     // subcommands soon
-    reference::process_fasta(&filename, ref_kmers.clone())?;
+    reference::score_all_records(&filename, ref_kmers.clone())?;
     intervals::compute_match_intervals(&filename, ref_kmers.clone())?;
 
     Ok(())

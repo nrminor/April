@@ -17,7 +17,7 @@ pub fn compute_match_intervals(input_path: &PathBuf, ref_kmers: Rc<[&[u8; 32]; 1
         // determine the sequence length (potentially for use later?)
         let record_len = Rc::from(seqrec.num_bases());
         let kmer_space = (*record_len / (kmer_len as usize)) * 2;
-        println!("{} possible kmers for the provided reference", kmer_space);
+        eprintln!("{} possible kmers for the provided reference", kmer_space);
 
         // double check that the sequence is uncorrupted
         let norm_seq = seqrec.normalize(true);
@@ -38,14 +38,14 @@ pub fn compute_match_intervals(input_path: &PathBuf, ref_kmers: Rc<[&[u8; 32]; 1
                 .windows((*test_kmer).len())
                 .any(|window| window == *test_kmer)
             {
-                println!("Kmer at position {} contains the test kmer:", pos);
-                println!("{}", std::str::from_utf8(kmer)?);
+                eprintln!("Kmer at position {} contains the test kmer:", pos);
+                eprintln!("{}", std::str::from_utf8(kmer)?);
                 hits.push(kmer);
                 hit_locs.push(pos);
             }
         }
 
-        println!(
+        eprintln!(
             "{} of {} kmers matched reference kmers.",
             hit_locs.len(),
             counter
@@ -66,7 +66,7 @@ pub fn compute_match_intervals(input_path: &PathBuf, ref_kmers: Rc<[&[u8; 32]; 1
             intervals.push(interval)
         }
 
-        println!("Interval-ing successful:\n{:?}", intervals)
+        eprintln!("Interval-ing successful:\n{:?}", intervals)
     }
 
     Ok(())
