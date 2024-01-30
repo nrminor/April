@@ -11,6 +11,12 @@ fn buffer_ref(target_ref: &Path) -> Result<Box<dyn FastxReader>> {
     Ok(ref_reader)
 }
 
+/// Collect all non-complement k-mers of length `kmer_len` for the
+/// reference records in the provided FASTA. Takes a FASTA record
+/// with normalized sequences (i.e., with bases 'A', 'T', 'G', or 'C'),
+/// along with their reverse complements, and returns a vector of UTF-
+/// 8 characters for each base. In the future this will be replaced with
+/// bit-kmers for lower memory usage.
 fn collect_kmers<'a>(
     normalized: &'a Cow<'a, [u8]>,
     reverse_comp: &'a [u8],
@@ -37,7 +43,9 @@ fn collect_kmers<'a>(
     }
 }
 
-///TODO
+/// Oversees the conversion of all records in the reference FASTA pointed to
+/// with `target_ref` into k-mers of length `kmer_len`. Returns a Result type
+/// containing a database of all k-mers with the same orientation as the reference.
 pub fn ref_to_kmers(target_ref: &Path, kmer_len: Rc<u8>) -> Result<Vec<Rc<[u8]>>> {
     let mut ref_reader: Box<dyn FastxReader> = buffer_ref(target_ref)?;
     let mut kmer_db: Vec<Rc<[u8]>> = Vec::new();

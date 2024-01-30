@@ -6,6 +6,11 @@ pub mod reference;
 use anyhow::Result;
 use std::{path::PathBuf, rc::Rc};
 
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if .
 fn main() -> Result<()> {
     //  variables that will be outsourced to the command line interface
     let filename = PathBuf::from("test_dataset/PP141354.1.fasta");

@@ -1,11 +1,32 @@
 use anyhow::Result;
 use needletail::{parse_fastx_file, parser::SequenceRecord, sequence::minimizer, Sequence};
+use std::borrow::Cow;
 use std::path::Path;
 use std::rc::Rc;
 
 use crate::kmers::ref_to_kmers;
 
-/// TODO
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if .
+fn seq_to_windows<'a>(normalized: &'a Cow<'a, [u8]>, kmer_len: Rc<u8>) -> Result<Vec<&'a [u8]>> {
+    let windows: Vec<&[u8]> = normalized.windows(*kmer_len as usize).collect();
+
+    match windows.is_empty() {
+        true => Err(anyhow::Error::msg(
+            "Unable to compute k-mers for the provided reference FASTA.",
+        )),
+        false => Ok(windows),
+    }
+}
+
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if .
 fn score_infiltration(
     seqrec: &SequenceRecord<'_>,
     kmer_len: Rc<u8>,
@@ -21,6 +42,9 @@ fn score_infiltration(
 
     // retrieve the reverse complement of the fasta record
     let rc = norm_seq.reverse_complement();
+
+    // generate windows for comparison with ref kmers
+    let _windows = seq_to_windows(&norm_seq, kmer_len.clone());
 
     // make vectors to contain kmer "hits" and their locations, along with
     // a counter for all kmers
@@ -54,7 +78,15 @@ fn score_infiltration(
     Ok(score)
 }
 
-/// TODO
+/// .
+///
+/// # Panics
+///
+/// Panics if .
+///
+/// # Errors
+///
+/// This function will return an error if .
 pub fn score_all_records(input_path: &Path, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Result<()> {
     // TODO: Replace with actual slice of all minimizer kmers from reference
     let test_kmer: &[u8; 32] = ref_kmers.first().unwrap();
