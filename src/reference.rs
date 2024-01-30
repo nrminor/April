@@ -1,5 +1,5 @@
 use anyhow::Result;
-use needletail::{parse_fastx_file, parser::SequenceRecord, sequence::minimizer, Sequence};
+use needletail::{parse_fastx_file, parser::SequenceRecord, Sequence};
 use std::borrow::Cow;
 use std::path::Path;
 use std::rc::Rc;
@@ -13,7 +13,7 @@ use crate::kmers::ref_to_kmers;
 ///
 /// This function will return an error if .
 fn seq_to_windows<'a>(normalized: &'a Cow<'a, [u8]>, kmer_len: Rc<u8>) -> Result<Vec<&'a [u8]>> {
-    let windows: Vec<&[u8]> = normalized.windows(*kmer_len as usize).collect();
+    let windows: Vec<&[u8]> = normalized.chunks(*kmer_len as usize).collect();
 
     match windows.is_empty() {
         true => Err(anyhow::Error::msg(
@@ -28,9 +28,9 @@ fn seq_to_windows<'a>(normalized: &'a Cow<'a, [u8]>, kmer_len: Rc<u8>) -> Result
 /// # Errors
 ///
 /// This function will return an error if .
-fn _window_min_score<'a>(window: &'a [u8], ref_kmers: Vec<&'a [u8]>) -> Result<Option<usize>> {
+fn window_min_score(window: &[u8], ref_kmers: &[Rc<[u8]>]) -> Result<Option<usize>> {
     let scoring_attempt: Result<Vec<usize>> = ref_kmers
-        .into_iter()
+        .iter()
         .map(|kmer| {
             let kmer_str = std::str::from_utf8(kmer)?;
             let window_str = std::str::from_utf8(window)?;
@@ -55,50 +55,39 @@ fn _window_min_score<'a>(window: &'a [u8], ref_kmers: Vec<&'a [u8]>) -> Result<O
 fn score_infiltration(
     seqrec: &SequenceRecord<'_>,
     kmer_len: Rc<u8>,
-    test_kmer: &[u8; 32],
-) -> Result<usize> {
+    ref_kmers: &[Rc<[u8]>],
+) -> Result<f64> {
     // determine the sequence length (potentially for use later?)
     let record_len = Rc::from(seqrec.num_bases());
-    let kmer_space = (*record_len / (*kmer_len as usize)) * 2;
-    eprintln!("{} possible kmers for the provided reference", kmer_space);
+    eprintln!("{:?}", record_len);
 
     // double check that the sequence is uncorrupted
     let norm_seq = seqrec.normalize(true);
 
-    // retrieve the reverse complement of the fasta record
-    let rc = norm_seq.reverse_complement();
-
     // generate windows for comparison with ref kmers
-    let _windows = seq_to_windows(&norm_seq, kmer_len.clone())?;
-
-    // make vectors to contain kmer "hits" and their locations, along with
-    // a counter for all kmers
-    let mut hits: Vec<&[u8]> = Vec::new();
-    let mut hit_locs: Vec<usize> = Vec::new();
-    let mut counter = 0;
-
-    // figure out which kmers are hits
-    for (i, (pos, kmer, _)) in norm_seq.canonical_kmers(*kmer_len, &rc).enumerate() {
-        counter = i;
-        let _mini = minimizer(kmer, kmer.len());
-        if kmer
-            .windows((*test_kmer).len())
-            .any(|window| window == *test_kmer)
-        {
-            eprintln!("Kmer at position {} contains the test kmer:", pos);
-            eprintln!("{}", std::str::from_utf8(kmer)?);
-            hits.push(kmer);
-            hit_locs.push(pos);
-        }
-    }
-
+    let windows = seq_to_windows(&norm_seq, kmer_len.clone())?;
     eprintln!(
-        "{} of {} kmers matched reference kmers.",
-        hit_locs.len(),
-        counter
+        "Number of windows for record of length {} with a K of {}: {}",
+        record_len,
+        *kmer_len,
+        windows.len()
     );
 
-    let score = hits.len() / counter;
+    // collect minimum distances per window
+    let scores: Vec<usize> = windows
+        .iter()
+        .map(|window| {
+            let scoring_attempt = window_min_score(window, ref_kmers);
+            match scoring_attempt {
+                Ok(Some(score)) => score,
+                _ => 0_usize,
+            }
+        })
+        .collect();
+
+    // compute a stand-in score that will be replaced with a statistic
+    let nil_count = &scores.iter().filter(|score| score == &&0_usize).count();
+    let score = (*nil_count as f64) / (scores.len() as f64);
 
     Ok(score)
 }
@@ -112,11 +101,8 @@ fn score_infiltration(
 /// # Errors
 ///
 /// This function will return an error if .
-pub fn score_all_records(input_path: &Path, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Result<()> {
-    // TODO: Replace with actual slice of all minimizer kmers from reference
-    let test_kmer: &[u8; 32] = ref_kmers.first().unwrap();
-    let kmer_len = Rc::from(test_kmer.len() as u8);
-    let _ref_kmers = ref_to_kmers(Path::new("test_dataset/PP141354.1.fasta"), kmer_len.clone());
+pub fn score_all_records(input_path: &Path, ref_path: &Path, kmer_len: Rc<u8>) -> Result<()> {
+    let ref_kmers = ref_to_kmers(ref_path, kmer_len.clone())?;
 
     // open fasta reader
     let mut reader = parse_fastx_file(input_path)?;
@@ -124,18 +110,18 @@ pub fn score_all_records(input_path: &Path, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Re
         // unwrap the record
         let seqrec = record?;
 
-        let scoring_attempt = score_infiltration(&seqrec, kmer_len.clone(), test_kmer);
+        let scoring_attempt = score_infiltration(&seqrec, kmer_len.clone(), &ref_kmers);
         match scoring_attempt {
             Ok(score) => {
                 eprintln!(
                     "Sequence record {:?} has reference infiltration score of {}",
-                    &seqrec.id(),
+                    String::from_utf8(seqrec.id().to_vec()).unwrap(),
                     score,
                 );
             }
             Err(message) => eprintln!(
                 "Scoring record {:?} for reference infiltration failed:\n{:?}",
-                &seqrec.id(),
+                String::from_utf8(seqrec.id().to_vec()).unwrap(),
                 message
             ),
         }
