@@ -1,9 +1,9 @@
 use anyhow::Result;
-use needletail::parser::SequenceRecord;
-use needletail::sequence::minimizer;
-use needletail::{parse_fastx_file, Sequence};
-use std::path::PathBuf;
+use needletail::{parse_fastx_file, parser::SequenceRecord, sequence::minimizer, Sequence};
+use std::path::Path;
 use std::rc::Rc;
+
+use crate::kmers::ref_to_kmers;
 
 /// TODO
 fn score_infiltration(
@@ -55,10 +55,11 @@ fn score_infiltration(
 }
 
 /// TODO
-pub fn score_all_records(input_path: &PathBuf, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Result<()> {
+pub fn score_all_records(input_path: &Path, ref_kmers: Rc<[&[u8; 32]; 1]>) -> Result<()> {
     // TODO: Replace with actual slice of all minimizer kmers from reference
     let test_kmer: &[u8; 32] = ref_kmers.first().unwrap();
     let kmer_len = Rc::from(test_kmer.len() as u8);
+    let _ref_kmers = ref_to_kmers(Path::new("test_dataset/PP141354.1.fasta"), kmer_len.clone());
 
     // open fasta reader
     let mut reader = parse_fastx_file(input_path)?;

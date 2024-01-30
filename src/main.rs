@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod intervals;
+pub mod kmers;
 pub mod reference;
 
 use anyhow::Result;
