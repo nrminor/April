@@ -3,6 +3,11 @@ use std::{borrow::Cow, path::Path, rc::Rc};
 use anyhow::Result;
 use needletail::{parse_fastx_file, FastxReader, Sequence};
 
+pub enum KmerOptions {
+    K32 = 32,
+    K52 = 52,
+}
+
 /// Read the reference sequence in a separate function in preparationg
 /// for a future ansyc implementation
 fn buffer_ref(target_ref: &Path) -> Result<Box<dyn FastxReader>> {

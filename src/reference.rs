@@ -3,6 +3,7 @@ use needletail::{parse_fastx_file, parser::SequenceRecord, sequence::minimizer, 
 use std::borrow::Cow;
 use std::path::Path;
 use std::rc::Rc;
+use textdistance::str::hamming;
 
 use crate::kmers::ref_to_kmers;
 
@@ -19,6 +20,30 @@ fn seq_to_windows<'a>(normalized: &'a Cow<'a, [u8]>, kmer_len: Rc<u8>) -> Result
             "Unable to compute k-mers for the provided reference FASTA.",
         )),
         false => Ok(windows),
+    }
+}
+
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if .
+fn _window_min_score<'a>(window: &'a [u8], ref_kmers: Vec<&'a [u8]>) -> Result<Option<usize>> {
+    let scoring_attempt: Result<Vec<usize>> = ref_kmers
+        .into_iter()
+        .map(|kmer| {
+            let kmer_str = std::str::from_utf8(kmer)?;
+            let window_str = std::str::from_utf8(window)?;
+            Ok(hamming(kmer_str, window_str))
+        })
+        .collect();
+
+    match scoring_attempt {
+        Ok(dist_scores) => Ok(dist_scores.into_iter().min()),
+        Err(message) => Err(anyhow::Error::msg(format!(
+            "Scoring windows with reference k-mers failed with the following message:\n{:?}",
+            message
+        ))),
     }
 }
 
@@ -44,7 +69,7 @@ fn score_infiltration(
     let rc = norm_seq.reverse_complement();
 
     // generate windows for comparison with ref kmers
-    let _windows = seq_to_windows(&norm_seq, kmer_len.clone());
+    let _windows = seq_to_windows(&norm_seq, kmer_len.clone())?;
 
     // make vectors to contain kmer "hits" and their locations, along with
     // a counter for all kmers
